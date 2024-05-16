@@ -1,8 +1,8 @@
 job "[[ template "job_name" . ]]" {
-  region      = "[[ .base_app.region ]]"
-  datacenters = [ [[ range $idx, $dc := .base_app.datacenters ]][[if $idx]],[[end]][[ $dc | quote ]][[ end ]] ]
+  region      = "[[ var "region" . ]]"
+  datacenters = [ [[ range $idx, $dc := (var "datacenters" .) ]][[if $idx]],[[end]][[ $dc | quote ]][[ end ]] ]
   type = "service"
-  [[ range $c := .base_app.constraints ]]
+  [[ range $c := (var "constraints" .) ]]
   constraint {
     [[- if $c.attribute ]]
     [[- if (gt (len $c.attribute) 0)]]
@@ -21,25 +21,25 @@ job "[[ template "job_name" . ]]" {
   }  
 
   group "app" {
-    count = [[or .base_app.count 1]]
+    count = [[or (var "count" .) 1]]
     update {
-      auto_revert = [[ or .base_app.update.auto_revert true ]]
-      auto_promote = [[ or .base_app.update.auto_promote false ]]
-      max_parallel = [[ or .base_app.update.max_parallel 1 ]]
-      canary     = [[ or .base_app.update.canary 0 ]]
-      min_healthy_time = "[[ or .base_app.update.min_healthy_time "10s" ]]"
-      healthy_deadline = "[[ or .base_app.update.healthy_deadline "3m" ]]"
-      progress_deadline = "[[ or .base_app.update.progress_deadline "10m" ]]"
-      stagger = "[[ or .base_app.update.stagger "30s" ]]"
+      auto_revert = [[ or (var "auto_revert" .) true ]]
+      auto_promote = [[ or (var "auto_promote" .) false ]]
+      max_parallel = [[ or (var "max_parallel" .) 1 ]]
+      canary     = [[ orvar "(." .canary) 0 ]]
+      min_healthy_time = "[[ or (var "min_healthy_time" .) "10s" ]]"
+      healthy_deadline = "[[ or (var "healthy_deadline" .) "3m" ]]"
+      progress_deadline = "[[ or (var "progress_deadline" .) "10m" ]]"
+      stagger = "[[ or (var "stagger" .) "30s" ]]"
     }
     migrate {
-      max_parallel     = [[ or .base_app.migrate.max_parallel 1 ]]
-      health_check     = "[[ or .base_app.migrate.health_check "checks" ]]"
-      min_healthy_time = "[[ or .base_app.migrate.min_healthy_time "10s" ]]"
-      healthy_deadline = "[[ or .base_app.migrate.healthy_deadline "5m" ]]"
+      max_parallel     = [[ or (var "migrate.max_parallel" .) 1 ]]
+      health_check     = "[[ or (var "migrate.health_check" .) "checks" ]]"
+      min_healthy_time = "[[ or (var "migrate.min_healthy_time" .) "10s" ]]"
+      healthy_deadline = "[[ or (var "migrate.healthy_deadline" .) "5m" ]]"
     }    
     network {
-      [[ range $p := .base_app.ports -]]
+      [[ range $p := (var "ports" .) -]]
       port "[[ $p.name ]]" {
         to = [[ $p.port ]]
         [[- if $p.static -]]
@@ -50,7 +50,7 @@ job "[[ template "job_name" . ]]" {
     } 
     shutdown_delay = "5s"
       ### Servives
-      [[ range $service := .base_app.consul_services ]]
+      [[ range $service := (var "consul_services" .) ]]
       service {
         name = "[[ or $service.name "${NOMAD_JOB_NAME}"]]"
         port = "[[ $service.port ]]"
@@ -69,19 +69,19 @@ job "[[ template "job_name" . ]]" {
         }        
       }
       [[ end ]]     
-    task "[[ .base_app.app_name]]" {
+    task "[[ (var "app_name" .)]]" {
       driver = "docker"
       config {
-        image = "[[ or (env "DEPLOY_IMAGE") .base_app.image ]]"
-        ports = [ [[ range $p := .base_app.ports ]] "[[ $p.name ]]", [[ end ]] ]
+        image = "[[ or (env "DEPLOY_IMAGE") (var "image" .) ]]"
+        ports = [ [[ range $p := (var "ports" .) ]] "[[ $p.name ]]", [[ end ]] ]
         sysctl = {
           "net.core.somaxconn" = "1000"
         }
         extra_hosts = [
-          [[ range $host :=  .base_app.extra_hosts ]]"[[$host]]",[[end]]
+          [[ range $host :=  (var "extra_hosts" .) ]]"[[$host]]",[[end]]
         ]
-        [[- if gt (len .base_app.entrypoint) 0 ]]
-        entrypoint = [ [[ range $c := .base_app.entrypoint ]]"[[$c]]",[[end]] ]
+        [[- if gt (len (var "entrypoint" .)) 0 ]]
+        entrypoint = [ [[ range $c := (var "entrypoint" .) ]]"[[$c]]",[[end]] ]
         [[ end ]]
         logging {
           type = "journald"
@@ -94,12 +94,12 @@ job "[[ template "job_name" . ]]" {
         JAEGER_AGENT_IP = "${attr.unique.network.ip-address}"
         JAEGER_AGENT_PORT = "6831"
         JAEGER_AGENT_ADDR = "${attr.unique.network.ip-address}:6831"
-        [[- range $k, $v := .base_app.environment_variables ]]
+        [[- range $k, $v := (var "environment_variables" .) ]]
         [[ $k ]] = [[ $v | quote ]]
         [[- end ]]
       }
       ### Template
-      [[ range $file := .base_app.app_files ]]
+      [[ range $file := (var "app_files" .) ]]
         template {
               data = <<EOF
       [[ fileContents $file.src ]]
@@ -118,8 +118,8 @@ job "[[ template "job_name" . ]]" {
         max_file_size = 2
       }      
       resources {
-        cpu = "[[ or .base_app.resources.cpu 100]]"
-        memory = "[[ or .base_app.resources.memory 300]]"
+        cpu = "[[ or (var "resources.cpu" .) 100]]"
+        memory = "[[ or (var "resources.memory" .) 300]]"
       }
     }
   }

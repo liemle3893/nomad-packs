@@ -23,14 +23,14 @@ job "[[ template "job_name" . ]]" {
   group "app" {
     count = [[or (var "count" .) 1]]
     update {
-      auto_revert = [[ or (var "auto_revert" .) true ]]
-      auto_promote = [[ or (var "auto_promote" .) false ]]
-      max_parallel = [[ or (var "max_parallel" .) 1 ]]
-      canary     = [[ orvar "(." .canary) 0 ]]
-      min_healthy_time = "[[ or (var "min_healthy_time" .) "10s" ]]"
-      healthy_deadline = "[[ or (var "healthy_deadline" .) "3m" ]]"
-      progress_deadline = "[[ or (var "progress_deadline" .) "10m" ]]"
-      stagger = "[[ or (var "stagger" .) "30s" ]]"
+      auto_revert = [[ or (var "update.auto_revert" .) true ]]
+      auto_promote = [[ or (var "update.auto_promote" .) false ]]
+      max_parallel = [[ or (var "update.max_parallel" .) 1 ]]
+      canary     = [[ or (var "update.canary" .) 0 ]]
+      min_healthy_time = "[[ or (var "update.min_healthy_time" .) "10s" ]]"
+      healthy_deadline = "[[ or (var "update.healthy_deadline" .) "3m" ]]"
+      progress_deadline = "[[ or (var "update.progress_deadline" .) "10m" ]]"
+      stagger = "[[ or (var "update.stagger" .) "30s" ]]"
     }
     migrate {
       max_parallel     = [[ or (var "migrate.max_parallel" .) 1 ]]

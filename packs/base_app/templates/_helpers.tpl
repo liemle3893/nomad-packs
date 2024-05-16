@@ -1,8 +1,8 @@
 [[- define "job_name" -]]
-[[- if eq (default .base_app.app_name "") "" -]]
-[[- .nomad_pack.pack.name -]]
+[[- if eq (default (var "app_name" .) "") "" -]]
+[[- meta "pack.name" . -]]
 [[- else -]]
-[[- .base_app.app_name -]]
+[[- var "app_name" . -]]
 [[- end -]]
 [[- end -]]
 
